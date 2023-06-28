@@ -8,7 +8,6 @@ def main():
     parser.add_argument("-dataset_path", type=str,
                         default='/home/lwt/data/ACDC/training')
     args = parser.parse_args()
-
     task_id = 27
     task_name = "ACDC"
     foldername = "Task%03.0d_%s" % (task_id, task_name)

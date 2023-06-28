@@ -29,9 +29,9 @@ PLEASE READ paths.md FOR INFORMATION TO HOW TO SET THIS UP
 # preprocessing_output_dir = os.environ['nnUNet_preprocessed'] if "nnUNet_preprocessed" in os.environ.keys() else None
 # network_training_output_dir_base = os.path.join(os.environ['RESULTS_FOLDER']) if "RESULTS_FOLDER" in os.environ.keys() else None
 
-base = "/home/lwt/data/nnUNet_raw_data_base"
-preprocessing_output_dir = "/home/lwt/data_pro/nnUNet_preprocessed"
-network_training_output_dir_base = "/home/lwt/code/nnUNet_trained_models"
+base = "/root/paddlejob/workspace/work/taozewei/PHTrans/data/nnUNet_raw_data_base"
+preprocessing_output_dir = "/root/paddlejob/workspace/work/taozewei/PHTrans/data_pro/nnUNet_preprocessed"
+network_training_output_dir_base = "/root/paddlejob/workspace/work/taozewei/PHTrans/code/nnUNet_trained_models"
 
 if base is not None:
     nnUNet_raw_data = join(base, "nnUNet_raw_data")

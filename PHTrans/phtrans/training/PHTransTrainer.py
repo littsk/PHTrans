@@ -38,7 +38,7 @@ class PHTransTrainer(nnUNetTrainer):
 
     def __init__(self, plans_file, fold, output_folder=None, dataset_directory=None, batch_dice=True, stage=None,
                  unpack_data=True, deterministic=True, fp16=False, experiment_id=None, custom_batch_size=None,
-                 custom_network=None, task_id=None, count_params=False):
+                 custom_network=None, task_id=None, count_params=False, deep_supervision=False, max_num_epochs=1000):
 
         os.environ['nnunet_use_progress_bar'] = "1"
         self.experiment_id = experiment_id
@@ -46,7 +46,7 @@ class PHTransTrainer(nnUNetTrainer):
                          deterministic, fp16)
         self.init_args = (plans_file, fold, output_folder, dataset_directory, batch_dice, stage, unpack_data,
                           deterministic, fp16, experiment_id, custom_batch_size, custom_network, task_id)
-        self.max_num_epochs = 1000
+        self.max_num_epochs = max_num_epochs
         self.initial_lr = 1e-2
         self.deep_supervision_scales = None
         self.ds_loss_weights = None
@@ -56,10 +56,13 @@ class PHTransTrainer(nnUNetTrainer):
         self.task_id = task_id
         self.average_global_dc = 0
         self.count_params = count_params
-        if self.custom_network == "UNETR" or self.custom_network == "Swin_UNETR":
-            self.deep_supervision = False 
-        else:
-            self.deep_supervision = True
+        self.deep_supervision = deep_supervision
+        # if self.custom_network == "UNETR" or self.custom_network == "Swin_UNETR":
+        #     self.deep_supervision = False 
+        # else:
+        #     self.deep_supervision = True
+
+        
 
     def initialize(self, training=True, force_load_plans=False):
         """
@@ -168,7 +171,7 @@ class PHTransTrainer(nnUNetTrainer):
                                         len(self.net_num_pool_op_kernel_sizes),
                                         self.conv_per_stage, 2, conv_op, norm_op, norm_op_kwargs, dropout_op,
                                         dropout_op_kwargs,
-                                        net_nonlin, net_nonlin_kwargs, True, False, lambda x: x, InitWeights_He(
+                                        net_nonlin, net_nonlin_kwargs, self.deep_supervision, False, lambda x: x, InitWeights_He(
                                             1e-2),
                                         self.net_num_pool_op_kernel_sizes, self.net_conv_kernel_sizes, False, True, True)
         elif self.custom_network == "PHTrans" and self.task_id == 17:
@@ -179,7 +182,7 @@ class PHTransTrainer(nnUNetTrainer):
                                    image_channels=self.num_input_channels,
                                    pool_op_kernel_sizes=self.net_num_pool_op_kernel_sizes,
                                    conv_kernel_sizes=self.net_conv_kernel_sizes, 
-                                   deep_supervision=True,
+                                   deep_supervision=self.deep_supervision,
                                    max_num_features=24*13, 
                                    depths=[2, 2, 2, 2], 
                                    num_heads=[3, 6, 12, 24],
@@ -193,7 +196,7 @@ class PHTransTrainer(nnUNetTrainer):
                                    image_channels=self.num_input_channels,
                                    pool_op_kernel_sizes=self.net_num_pool_op_kernel_sizes,
                                    conv_kernel_sizes=self.net_conv_kernel_sizes, 
-                                   deep_supervision=True,
+                                   deep_supervision=self.deep_supervision,
                                    max_num_features=24*13, 
                                    depths=[2, 2, 2, 2], 
                                    num_heads=[3, 6, 12, 24],
@@ -207,7 +210,7 @@ class PHTransTrainer(nnUNetTrainer):
                                    image_channels=self.num_input_channels,
                                    pool_op_kernel_sizes=self.net_num_pool_op_kernel_sizes,
                                    conv_kernel_sizes=self.net_conv_kernel_sizes, 
-                                   deep_supervision=True,
+                                   deep_supervision=self.deep_supervision,
                                    max_num_features=360, 
                                    depths=[2, 2, 2, 2], 
                                    num_heads=[3, 6, 12, 24],

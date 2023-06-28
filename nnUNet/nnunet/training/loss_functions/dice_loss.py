@@ -21,6 +21,12 @@ from nnunet.utilities.tensor_utilities import sum_tensor
 from torch import nn
 import numpy as np
 
+# 测试代码
+import os
+import sys
+import torch.nn.functional as F
+sys.path.append("/root/paddlejob/workspace/work/seg_impo")
+from tools.sim_loss import SimLoss
 
 class GDL(nn.Module):
     def __init__(self, apply_nonlin=None, batch_dice=False, do_bg=True, smooth=1.,
@@ -319,7 +325,15 @@ class DC_and_CE_loss(nn.Module):
         self.weight_dice = weight_dice
         self.weight_ce = weight_ce
         self.aggregate = aggregate
-        self.ce = RobustCrossEntropyLoss(**ce_kwargs)
+        self.use_sim_loss = False
+        if "USE_SIM_LOSS" in os.environ.keys() and int(os.environ["USE_SIM_LOSS"]) == 1:
+            assert "ALPHA" in os.environ.keys(), "ALPHA is not defined"
+            assert "N_CLASSES" in os.environ.keys(), "N_CLASSES is not defined"
+            self.n_classes = int(os.environ["N_CLASSES"])
+            self.ce = SimLoss(self.n_classes, float(os.environ["ALPHA"]))
+            self.use_sim_loss = True
+        else:
+            self.ce = RobustCrossEntropyLoss(**ce_kwargs)
 
         self.ignore_label = ignore_label
 
@@ -346,11 +360,13 @@ class DC_and_CE_loss(nn.Module):
         dc_loss = self.dc(net_output, target, loss_mask=mask) if self.weight_dice != 0 else 0
         if self.log_dice:
             dc_loss = -torch.log(-dc_loss)
-
-        ce_loss = self.ce(net_output, target[:, 0].long()) if self.weight_ce != 0 else 0
-        if self.ignore_label is not None:
-            ce_loss *= mask[:, 0]
-            ce_loss = ce_loss.sum() / mask.sum()
+        if self.use_sim_loss:
+            ce_loss = self.ce(net_output, F.one_hot(target[:, 0].long(), self.n_classes).permute(0, 3, 1, 2))
+        else: 
+            ce_loss = self.ce(net_output, target[:, 0].long()) if self.weight_ce != 0 else 0
+            if self.ignore_label is not None:
+                ce_loss *= mask[:, 0]
+                ce_loss = ce_loss.sum() / mask.sum()
 
         if self.aggregate == "sum":
             result = self.weight_ce * ce_loss + self.weight_dice * dc_loss

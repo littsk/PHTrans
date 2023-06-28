@@ -91,6 +91,9 @@ def main():
                         help='path to nnU-Net checkpoint file to be used as pretrained model (use .model '
                              'file, for example model_final_checkpoint.model). Will only be used when actually training. '
                              'Optional. Beta. Use with caution.')
+    parser.add_argument('--use_deep_supervision', action='store_true', default=False,
+                        help='is use use_deep_supervision')
+    parser.add_argument('--max_num_epochs', type=float, default=1000, help='max num epochs to train')
 
     args = parser.parse_args()
     experiment_id = f"{args.experiment_id}_{datetime.now().strftime('%y%m%d_%H%M%S')}" if args.exist_experiment_id is None else args.exist_experiment_id
@@ -138,7 +141,7 @@ def main():
     trainer = trainer_class(plans_file, fold, output_folder=output_folder_name, dataset_directory=dataset_directory,
                             batch_dice=batch_dice, stage=stage, unpack_data=decompress_data,
                             deterministic=deterministic, fp16=run_mixed_precision, custom_batch_size=args.custom_batch_size, 
-                            custom_network=args.custom_network, experiment_id=experiment_id, task_id=task_id)
+                            custom_network=args.custom_network, experiment_id=experiment_id, task_id=task_id, deep_supervision=args.use_deep_supervision, max_num_epochs=args.max_num_epochs)
     if args.disable_saving:
         # whether or not to save the final checkpoint
         trainer.save_final_checkpoint = False
@@ -168,7 +171,6 @@ def main():
             else:
                 # new training without pretraine weights, do nothing
                 pass
-
             trainer.run_training()
         else:
             if valbest:
